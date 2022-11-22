@@ -1,6 +1,6 @@
 # Force Calling Benchmark
 
-We give a demo to help users for performing the regenotyping and evaluating performance. Here, we apply the integration VCF file from the callsets of HG002, HG003, and HG004 (all from GiaB Ashkenazim Trio) as the cohort-level SV target, then an HG002 alignments are selected to complete regenotyping under the SV target mentioned before.
+We give a demo to help users of performing the regenotyping and evaluating performance. Here, we apply the integration VCF file from the callsets of HG002, HG003, and HG004 (all from GiaB Ashkenazim Trio) as the cohort-level SV target, then the HG002 alignments are selected to complete regenotyping on the SV target mentioned before.
 The following procedures show the steps of applying regenotyping and reproducing the benchmark results. 
 
 # Get tools
