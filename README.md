@@ -16,6 +16,7 @@ conda install sniffles==1.0.12
 conda create -n test_fc python=3
 conda activate test_fc
 conda install sniffles==2.0.2 cuteSV==2.0.2 svjedi==1.1.6 truvari==3.2.0 samtools bgzip tabix
+# It costs approximately 30 seconds to install cuteSV2.
 ```
 
 # Get data
