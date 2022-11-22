@@ -15,8 +15,8 @@ conda install sniffles==1.0.12
 ```sh
 conda create -n test_fc python=3
 conda activate test_fc
-conda install sniffles==2.0.2 cuteSV==2.0.2 svjedi==1.1.6 truvari==3.2.0 samtools bgzip tabix
-# It costs approximately 30 seconds to install cuteSV2.
+conda install sniffles==2.0.2 cuteSV==2.0.2 svjedi==1.1.6 truvari==3.2.0 samtools tabix
+# It will cost approximately 30 seconds to install cuteSV2.
 ```
 
 # Get data
@@ -28,12 +28,12 @@ mkdir -p ref alns tools/{sniffles1,sniffles2,cutesv,svjedi} giab
 
 2) Download NIST and CMRG ground truth:
 ```sh
-FTPDIR=ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/AshkenazimTrio/analysis/
+FTPDIR=ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/AshkenazimTrio/analysis
 curl -s ${FTPDIR}/NIST_SVs_Integration_v0.6/HG002_SVs_Tier1_v0.6.bed > giab/HG002_SVs_Tier1_v0.6.bed
 curl -s ${FTPDIR}/NIST_SVs_Integration_v0.6/HG002_SVs_Tier1_v0.6.vcf.gz > giab/HG002_SVs_Tier1_v0.6.vcf.gz
 ```
 ```sh
-FTPDIR=ftp://ftp.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/CMRG_v1.00/GRCh37/StructuralVariant/
+FTPDIR=ftp://ftp.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/CMRG_v1.00/GRCh37/StructuralVariant  
 curl -s ${FTPDIR}/HG002_GRCh37_CMRG_SV_v1.00.bed > giab/HG002_GRCh37_CMRG_SV_v1.00.bed
 curl -s ${FTPDIR}/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz > giab/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz
 ```
@@ -99,7 +99,7 @@ tabix tools/sniffles2/sniffles2.vcf.gz
 
 8a) Run cuteSV2 (v2.0.2):
 ```sh
-cuteSV alns/HG002_all.bam ref/human_hs37d5.fasta tools/cutesv/cutesv.call.vcf ./ --max_cluster_bias_INS 1000 --diff_ratio_merging_INS 0.5 --max_cluster_bias_DEL 1000 --diff_ratio_filtering_DEL 0.5 -Ivcf trio.vcf -q 10
+cuteSV alns/HG002_all.bam ref/human_hs37d5.fasta tools/cutesv/cutesv.call.vcf ./ --max_cluster_bias_INS 1000 --diff_ratio_merging_INS 0.5 --max_cluster_bias_DEL 1000 --diff_ratio_merging_DEL 0.5 -Ivcf trio.vcf -q 10
 ```
 8b) Prepare for truvari:
 ```sh
@@ -132,24 +132,24 @@ tabix tools/svjedi/svjedi.vcf.gz
 10a) Compare to NIST ground truth (v3.2.0):
 ```sh
 truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/sniffles1/sniffles1.vcf.gz\
-        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-sniffles1 -p 0 -r 1000 --multimatch –passonly
+        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-sniffles1 -p 0 -r 1000 --multimatch --passonly
 truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/sniffles2/sniffles2.vcf.gz\
-        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-sniffles2 -p 0 -r 1000 --multimatch –passonly
+        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-sniffles2 -p 0 -r 1000 --multimatch --passonly
 truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/cutesv/cutesv.vcf.gz\
-        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-cutesv -p 0 -r 1000 --multimatch –passonly
+        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-cutesv -p 0 -r 1000 --multimatch --passonly
 truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/svjedi/svjedi.vcf.gz\
-        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-svjedi -p 0 -r 1000 --multimatch –passonly
+        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-svjedi -p 0 -r 1000 --multimatch --passonly
 ```
 10b) Compare to CMRG ground truth (v3.2.0):
 ```sh
 truvari bench -b giab/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz -c tools/sniffles1/sniffles1.vcf.gz\
-        --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-sniffles1 -p 0 -r 1000 --multimatch –passonly
+        --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-sniffles1 -p 0 -r 1000 --multimatch --passonly
 truvari bench -b giab/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz -c tools/sniffles2/sniffles2.vcf.gz\
-        --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-sniffles2 -p 0 -r 1000 --multimatch –passonly
+        --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-sniffles2 -p 0 -r 1000 --multimatch --passonly
 truvari bench -b giab/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz -c tools/cutesv/cutesv.vcf.gz\
-        --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-cutesv -p 0 -r 1000 --multimatch –passonly
+        --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-cutesv -p 0 -r 1000 --multimatch --passonly
 truvari bench -b giab/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz -c tools/svjedi/svjedi.vcf.gz\
-        --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-svjedi -p 0 -r 1000 --multimatch –passonly
+        --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-svjedi -p 0 -r 1000 --multimatch --passonly
 ```
 
 # Down sample
