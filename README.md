@@ -1,6 +1,7 @@
 # Force Calling Benchmark
 
-This benchmark of force calling module in cuteSV is based on PacBio HiFi long-read sequencing of the Ashkenazim son HG002/NA24385. The following procedures show the steps of applying cuteSV and reproducing the benchmark results. 
+We give a demo to help users for performing the regenotyping and evaluating performance. Here, we apply the integration VCF file from the callsets of HG002, HG003, and HG004 (all from GiaB Ashkenazim Trio) as the cohort-level SV target, then an HG002 alignments are selected to complete regenotyping under the SV target mentioned before.
+The following procedures show the steps of applying regenotyping and reproducing the benchmark results. 
 
 # Get tools
 
