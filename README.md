@@ -7,8 +7,8 @@ This benchmark of force calling module in cuteSV is based on PacBio HiFi long-re
 Information about how to install `conda` and add the `bioconda` channel is available on https://bioconda.github.io/.
 
 ```sh
-conda create -n sniffles1 python=3
-conda activate sniffles1
+conda create -n sniffles1_env python=3
+conda activate sniffles1_env
 conda install sniffles==1.0.12
 ```
 ```sh
@@ -20,6 +20,7 @@ conda install sniffles==2.0.2 cuteSV==2.0.2 svjedi==1.1.6 truvari==3.2.0 samtool
 # Get data
 1) Create directory structure:
 ```sh
+conda activate test_fc
 mkdir -p ref alns tools/{sniffles1,sniffles2,cutesv,svjedi} giab
 ```
 
@@ -53,7 +54,9 @@ samtools index alns/HG002_all.bam
 
 5a) Run sniffles1 (v1.0.12):
 ```sh
+conda activate sniffles1_env
 sniffles -m alns/HG002_all.bam -v tools/sniffles1/sniffles1.call.vcf --Ivcf population.vcf
+conda deactivate
 ```
 5b) Prepare for truvari:
 ```sh
