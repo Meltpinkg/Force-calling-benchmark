@@ -14,7 +14,7 @@ conda install sniffles==1.0.12
 ```sh
 conda create -n test_fc python=3
 conda activate test_fc
-conda install sniffles==2.0.2 cuteSV==2.0.2 svjedi truvari==3.2.0 samtools bgzip tabix
+conda install sniffles==2.0.2 cuteSV==2.0.2 svjedi==1.1.6 truvari==3.2.0 samtools bgzip tabix
 ```
 
 # Get data
@@ -51,7 +51,7 @@ samtools index alns/HG002_all.bam
 
 # Run sniffles1
 
-5a) Run sniffles1:
+5a) Run sniffles1 (v1.0.12):
 ```sh
 sniffles -m alns/HG002_all.bam -v tools/sniffles1/sniffles1.call.vcf --Ivcf population.vcf
 ```
@@ -67,7 +67,7 @@ tabix tools/sniffles1/sniffles1.vcf.gz
 
 # Run sniffles2
 
-6a) Run sniffles2:
+6a) Run sniffles2 (v2.0.2):
 ```sh
 sniffles --input alns/HG002_all.bam --vcf tools/sniffles2/sniffles2.call.vcf --genotype-vcf population.vcf
 ```
@@ -87,7 +87,7 @@ tabix tools/sniffles2/sniffles2.vcf.gz
 
 # Run cuteSV2
 
-7a) Run cuteSV2:
+7a) Run cuteSV2 (v2.0.2):
 ```sh
 cuteSV alns/HG002_all.bam ref/human_hs37d5.fasta tools/cutesv/cutesv.call.vcf ./ --max_cluster_bias_INS 1000 --diff_ratio_merging_INS 0.9 --max_cluster_bias_DEL 1000 --diff_ratio_filtering_DEL 0.5 -Ivcf population.vcf -q 10
 ```
@@ -101,7 +101,7 @@ tabix tools/cutesv/cutesv.vcf.gz
 
 # Run SVJedi
 
-8a) Run SVJedi:
+8a) Run SVJedi (v1.1.6):
 ```sh
 samtools fasta alns/HG002_all.bam > alns/HG002_all.fasta
 python3 svjedi.py -v population.vcf -r ref/human_hs37d5.fasta -i alns/HG002_all.fasta -o tools/svjedi/svjedi.call.vcf
@@ -118,7 +118,7 @@ tabix tools/svjedi/svjedi.vcf.gz
 
 # Final comparison
 
-9a) Compare to NIST ground truth:
+9a) Compare to NIST ground truth (v3.2.0):
 ```sh
 truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/sniffles1/sniffles1.vcf.gz\
         --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-sniffles1 -p 0 -r 1000 --multimatch –passonly
@@ -129,7 +129,7 @@ truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/cutesv/cutesv.vcf.gz\
 truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/svjedi/svjedi.vcf.gz\
         --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-svjedi -p 0 -r 1000 --multimatch –passonly
 ```
-9b) Compare to CMRG ground truth:
+9b) Compare to CMRG ground truth (v3.2.0):
 ```sh
 truvari bench -b giab/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz -c tools/sniffles1/sniffles1.vcf.gz\
         --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-sniffles1 -p 0 -r 1000 --multimatch –passonly
