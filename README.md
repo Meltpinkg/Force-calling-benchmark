@@ -52,15 +52,20 @@ samtools calmd -b alns/HG002_origin.bam ref/human_hs37d5.fasta > alns/HG002_all.
 samtools index alns/HG002_all.bam
 ```
 
+5) Download the trio vcf file:
+```sh
+curl -s https://zenodo.org/record/7347467/files/trio.vcf > trio.vcf
+```
+
 # Run sniffles1
 
-5a) Run sniffles1 (v1.0.12):
+6a) Run sniffles1 (v1.0.12):
 ```sh
 conda activate sniffles1_env
-sniffles -m alns/HG002_all.bam -v tools/sniffles1/sniffles1.call.vcf --Ivcf population.vcf
+sniffles -m alns/HG002_all.bam -v tools/sniffles1/sniffles1.call.vcf --Ivcf trio.vcf
 conda deactivate
 ```
-5b) Prepare for truvari:
+6b) Prepare for truvari:
 ```sh
 grep '#' tools/sniffles1/sniffles1.call.vcf > tools/sniffles1/sniffles1.sort.vcf
 grep -v '#' tools/sniffles1/sniffles1.call.vcf | sort -k 1,1 -k 2,2n >> tools/sniffles1/sniffles1.sort.vcf
@@ -72,11 +77,11 @@ tabix tools/sniffles1/sniffles1.vcf.gz
 
 # Run sniffles2
 
-6a) Run sniffles2 (v2.0.2):
+7a) Run sniffles2 (v2.0.2):
 ```sh
-sniffles --input alns/HG002_all.bam --vcf tools/sniffles2/sniffles2.call.vcf --genotype-vcf population.vcf
+sniffles --input alns/HG002_all.bam --vcf tools/sniffles2/sniffles2.call.vcf --genotype-vcf trio.vcf
 ```
-6b) Prepare for truvari:
+7b) Prepare for truvari:
 ```sh
 grep '#' tools/sniffles2/sniffles2.call.vcf > tools/sniffles2/sniffles2.sort.vcf
 grep -v '#' tools/sniffles2/sniffles2.call.vcf | sort -k 1,1 -k 2,2n >> tools/sniffles2/sniffles2.sort.vcf
@@ -92,26 +97,27 @@ tabix tools/sniffles2/sniffles2.vcf.gz
 
 # Run cuteSV2
 
-7a) Run cuteSV2 (v2.0.2):
+8a) Run cuteSV2 (v2.0.2):
 ```sh
-cuteSV alns/HG002_all.bam ref/human_hs37d5.fasta tools/cutesv/cutesv.call.vcf ./ --max_cluster_bias_INS 1000 --diff_ratio_merging_INS 0.9 --max_cluster_bias_DEL 1000 --diff_ratio_filtering_DEL 0.5 -Ivcf population.vcf -q 10
+cuteSV alns/HG002_all.bam ref/human_hs37d5.fasta tools/cutesv/cutesv.call.vcf ./ --max_cluster_bias_INS 1000 --diff_ratio_merging_INS 0.5 --max_cluster_bias_DEL 1000 --diff_ratio_filtering_DEL 0.5 -Ivcf trio.vcf -q 10
 ```
-7b) Prepare for truvari:
+8b) Prepare for truvari:
 ```sh
 grep '#' tools/cutesv/cutesv.call.vcf > tools/cutesv/cutesv.vcf
 grep -v '#' tools/cutesv/cutesv.call.vcf | grep -v '0/0' | grep -v "\./\." >> tools/cutesv/cutesv.vcf
 bgzip -c tools/cutesv/cutesv.vcf > tools/cutesv/cutesv.vcf.gz
 tabix tools/cutesv/cutesv.vcf.gz
+# The sample output of cuteSV2 is available at https://doi.org/10.5281/zenodo.7347467.
 ```
 
 # Run SVJedi
 
-8a) Run SVJedi (v1.1.6):
+9a) Run SVJedi (v1.1.6):
 ```sh
 samtools fasta alns/HG002_all.bam > alns/HG002_all.fasta
-python3 svjedi.py -v population.vcf -r ref/human_hs37d5.fasta -i alns/HG002_all.fasta -o tools/svjedi/svjedi.call.vcf
+python3 svjedi.py -v trio.vcf -r ref/human_hs37d5.fasta -i alns/HG002_all.fasta -o tools/svjedi/svjedi.call.vcf
 ```
-8b) Prepare for truvari:
+9b) Prepare for truvari:
 ```sh
 grep '#' tools/svjedi/svjedi.call.vcf > tools/svjedi/svjedi.sort.vcf
 grep -v '#' tools/svjedi/svjedi.call.vcf | sort -k 1,1 -k 2,2n >> tools/svjedi/svjedi.sort.vcf
@@ -123,7 +129,7 @@ tabix tools/svjedi/svjedi.vcf.gz
 
 # Final comparison
 
-9a) Compare to NIST ground truth (v3.2.0):
+10a) Compare to NIST ground truth (v3.2.0):
 ```sh
 truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/sniffles1/sniffles1.vcf.gz\
         --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-sniffles1 -p 0 -r 1000 --multimatch –passonly
@@ -134,7 +140,7 @@ truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/cutesv/cutesv.vcf.gz\
 truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/svjedi/svjedi.vcf.gz\
         --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-svjedi -p 0 -r 1000 --multimatch –passonly
 ```
-9b) Compare to CMRG ground truth (v3.2.0):
+10b) Compare to CMRG ground truth (v3.2.0):
 ```sh
 truvari bench -b giab/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz -c tools/sniffles1/sniffles1.vcf.gz\
         --includebed giab/HG002_GRCh37_CMRG_SV_v1.00.bed -o CMRG-sniffles1 -p 0 -r 1000 --multimatch –passonly
@@ -148,7 +154,7 @@ truvari bench -b giab/HG002_GRCh37_CMRG_SV_v1.00.vcf.gz -c tools/svjedi/svjedi.v
 
 # Down sample
 
-10) Downsample the original alignment file:
+11) Downsample the original alignment file:
 ```sh
 samtools view -h -s 0.66 alns/HG002_all.bam | samtools view -bS > alns/HG002_20x.bam
 samtools view -h -s 0.33 alns/HG002_all.bam | samtools view -bS > alns/HG002_10x.bam
