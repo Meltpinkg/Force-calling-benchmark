@@ -1,2 +1,124 @@
-# Force-calling-benchmark
-The benchmark of force calling module in cuteSV.
+# Force calling benchmark
+
+This benchmark of force calling module in cuteSV is based on PacBio HiFi long-read sequencing of the Ashkenazim son HG002/NA24385. The following steps show how to apply cuteSV and how to reproduce the benchmark results. 
+
+# Get tools
+
+Information how to install `conda` and add the `bioconda` channel is available on https://bioconda.github.io/.
+
+```sh
+conda create -n sniffles1 python=3
+conda activate sniffles1
+conda install sniffles==1.0.12
+conda create -n test_fc python=3
+conda activate test_fc
+conda install sniffles==2.0.2 cuteSV==2.0.2 svjedi truvari==3.2.0 samtools bgzip tabix
+```
+
+# Get data
+1) Create directory structure:
+```sh
+mkdir -p ref alns tools/{sniffles,sniffles2,cuteSV,svjedi} giab
+```
+
+2) Download genome in a bottle annotations:
+```sh
+FTPDIR=ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/AshkenazimTrio/analysis/
+curl -s ${FTPDIR}/NIST_SVs_Integration_v0.6/HG002_SVs_Tier1_v0.6.bed > giab/HG002_SVs_Tier1_v0.6.bed
+curl -s ${FTPDIR}/NIST_SVs_Integration_v0.6/HG002_SVs_Tier1_v0.6.vcf.gz > giab/HG002_SVs_Tier1_v0.6.vcf.gz
+```
+
+3) Download hg19 reference with decoys and map non-ACGT characters to N:
+```sh
+curl -s ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz > ref/human_hs37d5.fasta.gz
+gunzip ref/human_hs37d5.fasta.gz
+sed -i '/^[^>]/ y/BDEFHIJKLMNOPQRSUVWXYZbdefhijklmnopqrsuvwxyz/NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN/' ref/human_hs37d5.fasta
+```
+
+4) Download all `.bam` files:
+```sh
+curl -s ftp://trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_CCS_15kb/alignment/HG002.Sequel.15kb.pbmm2.hs37d5.whatshap.haplotag.RTG.10x.trio.bam > alns/HG002_origin.bam
+samtools calmd -b alns/HG002_origin.bam ref/human_hs37d5.fasta > alns/HG002_all.bam
+samtools index alns/HG002_all.bam
+```
+
+# Run sniffles1
+
+5a) Run sniffles1:
+```sh
+sniffles -m alns/HG002_all.bam -v tools/sniffles1/sniffles1.call.vcf --Ivcf population.vcf
+```
+5b) Prepare for truvari:
+```sh
+grep '#' tools/sniffles1/sniffles1.call.vcf > tools/sniffles1/sniffles1.sort.vcf
+grep -v '#' tools/sniffles1/sniffles1.call.vcf | sort -k 1,1 -k 2,2n >> tools/sniffles1/sniffles1.sort.vcf
+grep '#' tools/sniffles1/sniffles1.sort.vcf > tools/sniffles1/sniffles1.vcf
+grep -v '#' tools/sniffles1/sniffles1.sort.vcf | grep -v '0/0' | grep -v "\./\." >> tools/sniffles1/sniffles1.vcf
+bgzip -c tools/sniffles1/sniffles1.vcf > tools/sniffles1/sniffles1.vcf.gz
+tabix tools/sniffles1/sniffles1.vcf.gz
+```
+
+# Run sniffles2
+
+6a) Run sniffles2:
+```sh
+sniffles --input alns/HG002_all.bam --vcf tools/sniffles2/sniffles2.call.vcf --genotype-vcf population.vcf
+```
+6b) Prepare for truvari:
+```sh
+grep '#' tools/sniffles2/sniffles2.call.vcf > tools/sniffles2/sniffles2.sort.vcf
+grep -v '#' tools/sniffles2/sniffles2.call.vcf | sort -k 1,1 -k 2,2n >> tools/sniffles2/sniffles2.sort.vcf
+awk -F '\t' '{if($1=="#CHROM") {for(i=1;i<10;i++) printf($i"\t"); print($10);} else print($0);}' tools/sniffles2/sniffles2.sort.vcf > temp.vcf
+sed -i 'N;122 a ##FORMAT=<ID=DV,Number=1,Type=Integer,Description="# High-quality variant reads">' temp.vcf
+sed -i 'N;122 a ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="# Genotype quality">' temp.vcf
+grep '#' temp.vcf > tools/sniffles2/sniffles2.vcf
+grep -v '#' temp.vcf | grep -v '0/0' | grep -v "\./\." >> tools/sniffle2/sniffles2.vcf
+rm temp.vcf
+bgzip -c tools/sniffles2/sniffles2.vcf > tools/sniffles2/sniffles2.vcf.gz
+tabix tools/sniffles2/sniffles2.vcf.gz
+```
+
+# Run cuteSV2
+
+7a) Run cuteSV2:
+```sh
+cuteSV alns/HG002_all.bam ref/human_hs37d5.fasta tools/cutesv/cutesv.call.vcf ./ --max_cluster_bias_INS 1000 --diff_ratio_merging_INS 0.9 --max_cluster_bias_DEL 1000 --diff_ratio_filtering_DEL 0.5 -Ivcf population.vcf -q 10
+```
+7b) Prepare for truvari:
+```sh
+grep '#' tools/cutesv/cutesv.call.vcf > tools/cutesv/cutesv.vcf
+grep -v '#' tools/cutesv/cutesv.call.vcf | grep -v '0/0' | grep -v "\./\." >> tools/cutesv/cutesv.vcf
+bgzip -c tools/cutesv/cutesv.vcf > tools/cutesv/cutesv.vcf.gz
+tabix tools/cutesv/cutesv.vcf.gz
+```
+
+# Run SVJedi
+
+8a) Run SVJedi:
+```sh
+samtools fasta alns/HG002_all.bam > alns/HG002_all.fasta
+python3 svjedi.py -v population.vcf -r ref/human_hs37d5.fasta -i alns/HG002_all.fasta -o tools/svjedi/svjedi.call.vcf
+```
+8b) Prepare for truvari:
+```sh
+grep '#' tools/svjedi/svjedi.call.vcf > tools/svjedi/svjedi.sort.vcf
+grep -v '#' tools/svjedi/svjedi.call.vcf | sort -k 1,1 -k 2,2n >> tools/svjedi/svjedi.sort.vcf
+grep '#' tools/svjedi/svjedi.sort.vcf > tools/svjedi/svjedi.vcf
+grep -v '#' tools/svjedi/svjedi.sort.vcf | grep -v '0/0' | grep -v "\./\." >> tools/svjedi/svjedi.vcf
+bgzip -c tools/svjedi/svjedi.vcf > tools/svjedi/svjedi.vcf.gz
+tabix tools/svjedi/svjedi.vcf.gz
+```
+
+# Final comparison
+
+9a) Compare to NIST ground truth:
+```sh
+truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/sniffles1/sniffles1.vcf.gz\
+        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-sniffles1 -p 0 -r 1000 --multimatch –passonly
+truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/sniffles2/sniffles2.vcf.gz\
+        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-sniffles2 -p 0 -r 1000 --multimatch –passonly
+truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/cutesv/cutesv.vcf.gz\
+        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-cutesv -p 0 -r 1000 --multimatch –passonly
+truvari bench -b giab/HG002_SVs_Tier1_v0.6.vcf.gz -c tools/svjedi/svjedi.vcf.gz\
+        --includebed giab/HG002_SVs_Tier1_v0.6.bed -o NIST-svjedi -p 0 -r 1000 --multimatch –passonly
+```
